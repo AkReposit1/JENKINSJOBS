@@ -1,0 +1,14 @@
+sudo su -
+yum install httpd -y
+service httpd start
+cd /mnt
+rm -rf velocityapp1
+git clone https://github.com/AkReposit1/velocityapp1.git
+cd velocityapp1
+cp -R /mnt/velocityapp1/index.html /var/www/html/
+chmod -R 777 /var/www/html
+service httpd restart
+chkconfig httpd on
+
+Forbidden you dont have permission to access this resource
+Hello All welcome to velocity
