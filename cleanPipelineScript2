@@ -1,0 +1,48 @@
+pipeline{
+    agent{
+        label{
+            label 'built-in'
+            customWorkspace '/mnt/data/'
+        }
+    }
+    
+    stages{
+        stage('delete projects dir'){
+            steps{
+                dir('/mnt/data/'){
+                    sh"rm -rf pro*"
+                    sh"aws s3 rm s3://bucketforgameoflife123 --recursive"
+                    sh"aws s3 rb s3://bucketforgameoflife123"
+                }
+            }
+        }
+        
+        stage('Parallel execution on Slave1 and Slave2'){
+            parallel{
+                stage('Slave1'){
+                    agent{
+                        label{
+                            label 'Slave1'
+                        }
+                    }
+                    steps{
+                        sh"sudo rm -rf /mnt/web*"
+                    }
+                }
+                
+                stage('Slave2'){
+                    agent{
+                        label{
+                            label 'Slave2'
+                        }
+                    }
+                    steps{
+                        sh"sudo rm -rf /mnt/web*"
+                    }
+                }
+            }
+        }
+    }
+    
+    
+}
