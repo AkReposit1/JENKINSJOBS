@@ -1,0 +1,184 @@
+pipeline{
+    agent none
+    /*agent{
+        label{
+            label'Slave1'
+            //customWorkspace'/home/ec2-user/projects'
+        }
+    }*/
+    tools { 
+        maven 'apache-maven-3.8.6' 
+        //jdk 'jdk8' 
+    }
+    stages{
+        stage('Parallel execution on slave1 and slave2'){
+            parallel{
+                stage('Slave1'){
+                    agent {
+                        label{
+                            label'Slave1'
+                            customWorkspace'/home/ec2-user/projects'
+                        }
+                    }
+                    stages{
+                        stage('wget maven'){
+                            steps{
+                                sh"sudo chmod -R 777 /mnt"
+                                sh"sudo rm -rf /home/ec2-user/*mave*"
+                                sh"sudo mkdir /home/ec2-user/maven"
+                                //sh"sudo chmod -R 777 /mnt/maven"
+                                dir('/home/ec2-user/maven'){
+                                    sh"sudo wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.zip"
+                                    sh"sudo unzip apache-maven-3.8.6-bin.zip"
+                                    sh"sudo rm -rf apache-maven-3.8.6-bin.zip"
+                                }
+                            }
+                        }
+                        stage('add path'){
+                            steps{
+                                sh'''
+                                    sudo sed -i "11iexport MAVEN_HOME=/home/ec2-user/maven/apache-maven-3.8.6/" /home/ec2-user/.bash_profile
+                                    sudo sed -i '12iexport PATH=$MAVEN_HOME/.local/bin:$PATH:$MAVEN_HOME/bin:$PATH' /home/ec2-user/.bash_profile
+                                '''
+                                
+                                /*PATH=$PATH:$HOME/.local/bin:$HOME/bin
+                                #PATH=$PATH:$HOME/bin
+                                export MAVEN_HOME=/mnt/apache-maven-3.8.6/
+                                
+                                #export PATH=$MAVEN_HOME/bin:$PATH
+                                export PATH=$MAVEN_HOME/.local/bin:$MAVEN_HOME/bin:$PATH
+                                
+                                export PATH
+                                */
+                            }
+                        }
+                        stage('clone gameoflife'){
+                            steps{
+                                sh"sudo rm -rf /mnt/game*"
+                                sh"sudo mkdir /mnt/gameoflife"
+                                sh"sudo chmod -R 777 /mnt/gameoflife"
+                                dir('/mnt/gameoflife'){
+                                sh"sudo git clone https://github.com/AkReposit1/game-of-life.git"
+                                sh"sudo chmod -R 777 /mnt/gameoflife/game-of-life"
+                                }
+                            }
+                        }
+                        stage('build and deploygameoflife on S3'){
+                            steps{
+                                dir('/mnt/gameoflife/game-of-life'){
+                                    sh"mvn clean install -DskipTests"
+                                    //sh"sudo mvn clean install -DskipTests"
+                                }
+                            }
+                        }
+                        stage('deploy gameoflife on tomcat'){
+                            steps{
+                                //sh"sudo chmod -R 777 /mnt"
+                                sh"sudo rm -rf /mnt/webser*"
+                                sh"sudo mkdir /mnt/webserver"
+                                sh"sudo chmod -R 777 /mnt/webserver"
+                                dir('/mnt/webserver'){
+                                    sh"sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.zip"
+                                    sh"sudo unzip apache-tomcat-9.0.67.zip"
+                                    sh"sudo rm -rf apache-tomcat-9.0.67.zip"
+                                    sh"sudo chmod -R 777 apache-tomcat-9.0.67"
+                                }
+                                    
+                                dir('/mnt/webserver/apache-tomcat-9.0.67/webapps/'){
+                                    sh"sudo cp /mnt/gameoflife/game-of-life/gameoflife-web/target/gameoflife.war ."
+                                }
+                                   
+                                dir('/mnt/webserver/apache-tomcat-9.0.67/bin/'){
+                                    sh"sudo ./startup.sh"
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Slave2'){
+                    agent{
+                        label{
+                            label'Slave2'
+                            customWorkspace'/home/ec2-user/projects'
+                        }
+                    }
+                    stages{
+                        stage('wget maven'){
+                            steps{
+                                sh"sudo chmod -R 777 /mnt"
+                                sh"sudo rm -rf /home/ec2-user/*mave*"
+                                sh"sudo mkdir /home/ec2-user/maven"
+                                //sh"sudo chmod -R 777 /mnt/maven"
+                                dir('/home/ec2-user/maven'){
+                                    sh"sudo wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.zip"
+                                    sh"sudo unzip apache-maven-3.8.6-bin.zip"
+                                    sh"sudo rm -rf apache-maven-3.8.6-bin.zip"
+                                }
+                            }
+                        }
+                        stage('add path'){
+                            steps{
+                                sh'''
+                                    sudo sed -i "11iexport MAVEN_HOME=/home/ec2-user/maven/apache-maven-3.8.6/" /home/ec2-user/.bash_profile
+                                    sudo sed -i '12iexport PATH=$MAVEN_HOME/.local/bin:$PATH:$MAVEN_HOME/bin:$PATH' /home/ec2-user/.bash_profile
+                                '''
+                                
+                                /*PATH=$PATH:$HOME/.local/bin:$HOME/bin
+                                #PATH=$PATH:$HOME/bin
+                                export MAVEN_HOME=/mnt/apache-maven-3.8.6/
+                                
+                                #export PATH=$MAVEN_HOME/bin:$PATH
+                                export PATH=$MAVEN_HOME/.local/bin:$MAVEN_HOME/bin:$PATH
+                                
+                                export PATH
+                                */
+                            }
+                        }
+                        stage('clone gameoflife'){
+                            steps{
+                                sh"sudo rm -rf /mnt/game*"
+                                sh"sudo mkdir /mnt/gameoflife"
+                                sh"sudo chmod -R 777 /mnt/gameoflife"
+                                dir('/mnt/gameoflife'){
+                                sh"sudo git clone https://github.com/AkReposit1/game-of-life.git"
+                                sh"sudo chmod -R 777 /mnt/gameoflife/game-of-life"
+                                }
+                            }
+                        }
+                        stage('build and deploygameoflife on S3'){
+                            steps{
+                                dir('/mnt/gameoflife/game-of-life'){
+                                    sh"mvn clean install -DskipTests"
+                                    //sh"sudo mvn clean install -DskipTests"
+                                }
+                            }
+                        }
+                        stage('deploy gameoflife on tomcat'){
+                            steps{
+                                //sh"sudo chmod -R 777 /mnt"
+                                sh"sudo rm -rf /mnt/webser*"
+                                sh"sudo mkdir /mnt/webserver"
+                                sh"sudo chmod -R 777 /mnt/webserver"
+                                dir('/mnt/webserver'){
+                                    sh"sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.zip"
+                                    sh"sudo unzip apache-tomcat-9.0.67.zip"
+                                    sh"sudo rm -rf apache-tomcat-9.0.67.zip"
+                                    sh"sudo chmod -R 777 apache-tomcat-9.0.67"
+                                }
+                                    
+                                dir('/mnt/webserver/apache-tomcat-9.0.67/webapps/'){
+                                    sh"sudo cp /mnt/gameoflife/game-of-life/gameoflife-web/target/gameoflife.war ."
+                                }
+                                   
+                                dir('/mnt/webserver/apache-tomcat-9.0.67/bin/'){
+                                    sh"sudo ./startup.sh"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+}

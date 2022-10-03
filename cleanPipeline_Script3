@@ -1,0 +1,44 @@
+pipeline{
+    agent none
+    /*agent{
+        label{
+            label'Slave1'
+            //label'Slave1 && Slave2'
+            //customWorkspace'/home/ec2-user/projects'
+        }
+    }*/
+    stages{
+        stage('Parallel execution on slave1 slave2'){
+            parallel{
+                stage('clean home/ec2-user /mnt Slave1'){
+                    agent{
+                        label{
+                            label'Slave1'
+                        }
+                    }
+                    steps{
+                        sh"sudo rm -rf /home/ec2-user/mave*"
+                        sh"sudo rm -rf /home/ec2-user/pr*"
+                        
+                        sh"sudo rm -rf /mnt/game*"
+                        sh"sudo rm -rf /mnt/web*"
+                    }
+                }
+                stage('clean home/ec2-user /mnt Slave2'){
+                    agent{
+                        label{
+                            label'Slave2'
+                        }
+                    }
+                    steps{
+                        sh"sudo rm -rf /home/ec2-user/mave*"
+                        sh"sudo rm -rf /home/ec2-user/pr*"
+                        
+                        sh"sudo rm -rf /mnt/game*"
+                        sh"sudo rm -rf /mnt/web*"
+                    }
+                }
+            }
+        }
+    }
+}
