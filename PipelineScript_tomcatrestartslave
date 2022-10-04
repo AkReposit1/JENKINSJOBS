@@ -1,0 +1,48 @@
+pipeline{
+    agent{
+        label{
+            label'Slave1'
+            customWorkspace'/home/ec2-user/projects/'
+        }
+    }
+    stages{
+        stage('download Tomcat'){
+            steps{
+                sh"sudo chmod -R 777 /mnt"
+                sh"sudo rm -rf /mnt/webser*"
+                sh"sudo mkdir /mnt/webserver"
+                sh"sudo chmod -R 777 /mnt/webserver"
+                dir('/mnt/webserver'){
+                    sh"sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.zip"
+                    sh"sudo unzip apache-tomcat-9.0.67.zip"
+                    sh"sudo rm -rf apache-tomcat-9.0.67.zip"
+                    sh"sudo chmod -R 777 apache-tomcat-9.0.67"
+                }
+            }
+        }
+        stage('Stop Tomcat'){
+            steps{
+                dir('/mnt/webserver/apache-tomcat-9.0.67/bin/'){
+                    sh"sudo ./shutdown.sh"
+                    sh'''
+                    sudo sed -i '69 s/port="8080"/port="8090"/' /mnt/webserver/apache-tomcat-9.0.67/conf/server.xml
+                    '''
+                }
+            }
+        }
+        stage('deploy gameoflife'){
+            steps{
+                dir('/mnt/webserver/apache-tomcat-9.0.67/webapps/'){
+                    sh"sudo cp /mnt/gameoflife/game-of-life/gameoflife-web/target/gameoflife.war ."
+                }
+            }
+        }
+        stage('Start Tomcat'){
+            steps{
+                dir('/mnt/webserver/apache-tomcat-9.0.67/bin/'){
+                    sh"sudo ./startup.sh"
+                }
+            }
+        }
+    }
+}
