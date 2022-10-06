@@ -10,9 +10,17 @@ pipeline{
             steps{
                 sh"sudo chmod -R 777 /mnt"
                 sh"sudo rm -rf /mnt/webser*"
-                sh"sudo mkdir /mnt/webserver"
-                sh"sudo chmod -R 777 /mnt/webserver"
-                dir('/mnt/webserver'){
+                sh"sudo mkdir /mnt/webserver1 /mnt/webserver2"
+                sh"sudo chmod -R 777 /mnt/webserver1 /mnt/webserver2"
+                
+                dir('/mnt/webserver1'){
+                    sh"sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.zip"
+                    sh"sudo unzip apache-tomcat-9.0.67.zip"
+                    sh"sudo rm -rf apache-tomcat-9.0.67.zip"
+                    sh"sudo chmod -R 777 apache-tomcat-9.0.67"
+                }
+                
+                dir('/mnt/webserver2'){
                     sh"sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.zip"
                     sh"sudo unzip apache-tomcat-9.0.67.zip"
                     sh"sudo rm -rf apache-tomcat-9.0.67.zip"
@@ -21,26 +29,84 @@ pipeline{
             }
         }
         stage('Stop Tomcat'){
-            steps{
-                dir('/mnt/webserver/apache-tomcat-9.0.67/bin/'){
-                    sh"sudo ./shutdown.sh"
-                    sh'''
-                    sudo sed -i '69 s/port="8080"/port="8090"/' /mnt/webserver/apache-tomcat-9.0.67/conf/server.xml
-                    '''
+            parallel{
+                stage('webserver1'){
+                    steps{
+                        dir('/mnt/webserver1/apache-tomcat-9.0.67/bin/'){
+                            sh"sudo ./shutdown.sh"
+                        }
+                    }
+                }
+                stage('webserver2'){
+                    steps{
+                        dir('/mnt/webserver2/apache-tomcat-9.0.67/bin/'){
+                            sh"sudo ./shutdown.sh"
+                        }
+                    }
                 }
             }
         }
+        
+        stage('server.xml port'){
+            parallel{
+                stage('webserver1'){
+                    steps{
+                        dir('/mnt/webserver1/apache-tomcat-9.0.67/conf/'){
+                        /*sh'''
+                            sudo sed -i '22 s/port="8005"/port="8115"/' /mnt/webserver1/apache-tomcat-9.0.67/conf/server.xml
+                            sudo sed -i '69 s/port="8080"/port="8181"/' /mnt/webserver1/apache-tomcat-9.0.67/conf/server.xml
+                        '''*/
+                        sh'''
+                            sudo sed -i '22 s/port="8005"/port="8555"/' /mnt/webserver1/apache-tomcat-9.0.67/conf/server.xml
+                            sudo sed -i '69 s/port="8080"/port="8585"/' /mnt/webserver1/apache-tomcat-9.0.67/conf/server.xml
+                        '''
+                        }
+                    }
+                }
+                stage('webserver2'){
+                    steps{
+                        dir('/mnt/webserver2/apache-tomcat-9.0.67/conf/'){
+                            /*sh'''
+                                sudo sed -i '22 s/port="8005"/port="8225"/' /mnt/webserver2/apache-tomcat-9.0.67/conf/server.xml
+                                sudo sed -i '69 s/port="8080"/port="8282"/' /mnt/webserver2/apache-tomcat-9.0.67/conf/server.xml
+                            '''*/
+                            sh'''
+                                sudo sed -i '22 s/port="8005"/port="8995"/' /mnt/webserver2/apache-tomcat-9.0.67/conf/server.xml
+                                sudo sed -i '69 s/port="8080"/port="8989"/' /mnt/webserver2/apache-tomcat-9.0.67/conf/server.xml
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
         stage('deploy gameoflife'){
             steps{
-                dir('/mnt/webserver/apache-tomcat-9.0.67/webapps/'){
+                dir('/mnt/webserver1/apache-tomcat-9.0.67/webapps/'){
+                    sh"sudo cp /mnt/gameoflife/game-of-life/gameoflife-web/target/gameoflife.war ."
+                }
+                
+                dir('/mnt/webserver2/apache-tomcat-9.0.67/webapps/'){
                     sh"sudo cp /mnt/gameoflife/game-of-life/gameoflife-web/target/gameoflife.war ."
                 }
             }
         }
         stage('Start Tomcat'){
-            steps{
-                dir('/mnt/webserver/apache-tomcat-9.0.67/bin/'){
-                    sh"sudo ./startup.sh"
+            parallel{
+                stage('webserver1'){
+                    steps{
+                        dir('/mnt/webserver1/apache-tomcat-9.0.67/bin/'){
+                            sh"sudo ./startup.sh"
+                            sh"sleep 10"
+                        }
+                    }
+                }
+                stage('webserver2'){
+                    steps{
+                        dir('/mnt/webserver2/apache-tomcat-9.0.67/bin/'){
+                            sh"sudo ./startup.sh"
+                        }
+                    }
                 }
             }
         }
