@@ -17,10 +17,11 @@ pipeline{
         stage('clone branches'){
             steps{
                 sh"sudo chmod -R 777 /mnt"
+                sh"sudo rm -rf /mnt/docker*"
                 sh"sudo mkdir /mnt/docker"
                 sh"sudo chmod -R 777 /mnt/docker"
                 dir('/mnt/docker'){
-                    sh"rm -rf 22Q*"
+                    //sh"rm -rf 22Q*"
                     sh"git clone -b 22Q1 https://github.com/AkReposit1/vel_app1.git 22Q1"
                     sh"git clone -b 22Q2 https://github.com/AkReposit1/vel_app1.git 22Q2"
                     sh"git clone -b 22Q3 https://github.com/AkReposit1/vel_app1.git 22Q3"
