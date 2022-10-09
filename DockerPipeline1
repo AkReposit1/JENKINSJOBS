@@ -36,16 +36,16 @@ pipeline{
         }
         stage('start containers'){
             steps{
-                sh"sudo docker run --name container1 -itdp 80:80 httpd bash"
-                sh"sudo docker run --name container2 -itdp 90:80 httpd bash"
-                sh"sudo docker run --name container3 -itdp 8080:80 httpd bash"
+                sh"sudo docker run --name container1 -itdp 80:80 httpd"
+                sh"sudo docker run --name container2 -itdp 90:80 httpd"
+                sh"sudo docker run --name container3 -itdp 8080:80 httpd"
             }
         }
         stage('deploy index.html in containers'){
             steps{
-                sh"sudo docker cp /mnt/docker/22Q1 container1:/usr/local/apache2/htdocs"
-                sh"sudo docker cp /mnt/docker/22Q2 container2:/usr/local/apache2/htdocs"
-                sh"sudo docker cp /mnt/docker/22Q3 container3:/usr/local/apache2/htdocs"
+                sh"sudo docker cp /mnt/docker/22Q1/index.html container1:/usr/local/apache2/htdocs"
+                sh"sudo docker cp /mnt/docker/22Q2/index.html container2:/usr/local/apache2/htdocs"
+                sh"sudo docker cp /mnt/docker/22Q3/index.html container3:/usr/local/apache2/htdocs"
             }
         }
     }
