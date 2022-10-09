@@ -1,0 +1,52 @@
+pipeline{
+    agent{
+        label{
+            label 'Slave1'
+            customWorkspace '/home/ec2-user/projects'
+        }
+    }
+    
+    stages{
+        stage('install docker'){
+            steps{
+                sh"sudo yum install docker -y"
+                sh"sudo systemctl start docker"
+                sh"sleep 10"
+            }
+        }
+        stage('clone branches'){
+            steps{
+                sh"sudo chmod -R 777 /mnt"
+                sh"sudo mkdir /mnt/docker"
+                sh"sudo chmod -R 777 /mnt/docker"
+                dir('/mnt/docker'){
+                    sh"rm -rf 22Q*"
+                    sh"git clone -b 22Q1 https://github.com/AkReposit1/vel_app1.git 22Q1"
+                    sh"git clone -b 22Q2 https://github.com/AkReposit1/vel_app1.git 22Q2"
+                    sh"git clone -b 22Q3 https://github.com/AkReposit1/vel_app1.git 22Q3"
+                }
+            }
+        }
+        stage('remove containers'){
+            steps{
+                //sh'sudo docker kill $(sudo docker ps -q)'
+                //sh'sudo docker rm $(sudo docker ps -a -q)'
+                sh"sudo docker system prune -a -f"
+            }
+        }
+        stage('start containers'){
+            steps{
+                sh"sudo docker run --name container1 -itdp 80:80 httpd bash"
+                sh"sudo docker run --name container2 -itdp 90:80 httpd bash"
+                sh"sudo docker run --name container3 -itdp 8080:80 httpd bash"
+            }
+        }
+        stage('deploy index.html in containers'){
+            steps{
+                sh"sudo docker cp /mnt/docker/22Q1 container1:/usr/local/apache2/htdocs"
+                sh"sudo docker cp /mnt/docker/22Q2 container2:/usr/local/apache2/htdocs"
+                sh"sudo docker cp /mnt/docker/22Q3 container3:/usr/local/apache2/htdocs"
+            }
+        }
+    }
+}
